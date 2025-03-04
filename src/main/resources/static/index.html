@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录注册</title>
+    <!-- 引入 Element UI 样式 -->
+    <link rel="stylesheet" href="https://unpkg.com/element-ui/lib/theme-chalk/index.css">
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(to right, #00c6ff, #0072ff);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .login-container, .register-container {
+            background: white;
+            padding: 40px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            width: 400px;
+        }
+        .el-form-item {
+            margin-bottom: 20px;
+        }
+        .el-button {
+            width: 100%;
+        }
+        .title {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 24px;
+            color: #333;
+        }
+        .link {
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+<div id="app">
+    <!-- 登录页面 -->
+    <div v-if="currentPage === 'login'" class="login-container">
+        <h2 class="title">登录</h2>
+        <el-form :model="loginForm" :rules="loginRules" ref="loginForm">
+            <el-form-item prop="username">
+                <el-input v-model="loginForm.username" placeholder="用户名"></el-input>
+            </el-form-item>
+            <el-form-item prop="password">
+                <el-input type="password" v-model="loginForm.password" placeholder="密码"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-checkbox v-model="loginForm.remember">记住我</el-checkbox>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="handleLogin">登录</el-button>
+            </el-form-item>
+        </el-form>
+        <div class="link">
+            <a href="javascript:;" @click="currentPage = 'register'">没有账号？去注册</a>
+        </div>
+    </div>
+
+    <!-- 注册页面 -->
+    <div v-if="currentPage === 'register'" class="register-container">
+        <h2 class="title">注册</h2>
+        <el-form :model="registerForm" :rules="registerRules" ref="registerForm">
+            <el-form-item prop="username">
+                <el-input v-model="registerForm.username" placeholder="用户名"></el-input>
+            </el-form-item>
+            <el-form-item prop="password">
+                <el-input type="password" v-model="registerForm.password" placeholder="密码"></el-input>
+            </el-form-item>
+            <el-form-item prop="confirmPassword">
+                <el-input type="password" v-model="registerForm.confirmPassword" placeholder="确认密码"></el-input>
+            </el-form-item>
+            <el-form-item prop="email">
+                <el-input v-model="registerForm.email" placeholder="邮箱"></el-input>
+            </el-form-item>
+            <el-form-item>
+                <el-button type="primary" @click="handleRegister">注册</el-button>
+            </el-form-item>
+        </el-form>
+        <div class="link">
+            <a href="javascript:;" @click="currentPage = 'login'">已有账号？去登录</a>
+        </div>
+    </div>
+</div>
+
+<!-- 引入 Vue 和 Element UI -->
+<script src="https://unpkg.com/vue@2/dist/vue.min.js"></script>
+<script src="./js/axios.js"></script>
+<script src="https://unpkg.com/element-ui/lib/index.js"></script>
+<script src="./js/comfetti.js"></script>
+
+<script>
+    new Vue({
+        el: '#app',
+        data() {
+            return {
+                currentPage: 'login', // 当前页面：login 或 register
+                loginForm: {
+                    username: '',
+                    password: '',
+                    remember: false
+                },
+                registerForm: {
+                    username: '',
+                    password: '',
+                    confirmPassword: '',
+                    email: ''
+                },
+                loginRules: {
+                    username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+                    password: [{ required: true, message: '请输入密码', trigger: 'blur' }]
+                },
+                registerRules: {
+                    username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
+                    password: [{ required: true, message: '请输入密码', trigger: 'blur' }],
+                    confirmPassword: [{ required: true, message: '请确认密码', trigger: 'blur' }],
+                    email: [{ required: true, message: '请输入邮箱', trigger: 'blur' }]
+                }
+            };
+        },
+        methods: {
+            handleLogin() {
+
+                axios.get("/user/login",{params: {
+                        username: this.loginForm.username,
+                        password: this.loginForm.password
+                }}).then((res)=>{
+                    let json = res.data;
+                    console.log(json);
+                    if(json == '登录成功'){
+                        setTimeout(()=>{
+                            window.location.href = "./page.html";
+                        },3000);
+                    }else{
+                        this.$message({
+                            message: '登录失败，请检查用户名和密码',
+                            type:'error'
+                        });
+                    }
+                })
+            },
+            handleRegister() {
+                const params = new URLSearchParams();
+                params.append('username', this.registerForm.username);
+                params.append('password', this.registerForm.password);
+                params.append('email', this.registerForm.email);
+
+                axios.post("/user/register",params).then((res)=>{
+                    let json = res.data;
+                    console.log(json);
+                    if(json == '注册成功'){
+                        this.$message({
+                            message: '注册成功，请登录',
+                            type:'success'
+                        })
+                        confetti({
+                            particleCount: 600, // 礼花数量
+                            spread: 100,         // 礼花扩散角度
+                            origin: {           // 页面中心位置
+                                x: 0.5,
+                                y: 0.5          // 调整 y 值以控制垂直位置
+                            },
+                            zIndex: 9999,       // 确保礼花在最上层
+                            colors: [           // 自定义颜色
+                                '#ffcc00',
+                                '#ff6600',
+                                '#ffcc00',
+                                '#00bfa5',
+                                '#ff6600'
+                            ],
+                            shapes: ['star', 'circle'], // 礼花形状
+                            disableForReducedMotion: true // 对于启用了"减少运动"设置的用户禁用效果
+                        });
+                        setTimeout(()=>{
+                            this.currentPage = 'login';
+                        },3000)
+
+                    }else {
+                        this.$message({
+                            message: '注册失败，请检查用户名和密码',
+                            type:'error'
+                        })}
+                    }).catch((err)=>{
+                    console.log(err);
+                })
+            }
+        }
+    });
+</script>
+</body>
+</html>
